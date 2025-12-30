@@ -3,40 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Games Collection</title>
+    <title>DiffThinker: Generative Multimodal Reasoning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+
     <style>
+        /* ================= 全局重置 ================= */
         body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1e293b;
             margin: 0;
             padding: 0;
-            background-color: #eef2f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* 核心：隐藏整个网页的滚动条，强制在一屏内显示 */
-            overflow: hidden;
-            height: 100vh;
+            background-color: #f8fafc; /* 极简灰白背景 */
+            overflow-x: hidden;
+        }
+
+        /* ================= 导航栏 ================= */
+        nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 1rem 4%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-right a {
+            margin-left: 24px;
+            text-decoration: none;
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-right a:hover { color: #0f172a; }
+
+        /* ================= Hero & Content 区域 ================= */
+        /* 将上半部分统一为白色背景 */
+        .hero-container {
+            background: #fff;
+            padding: 80px 5% 60px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* 游戏容器区域 */
+        h1 {
+            font-size: 3rem;
+            max-width: 1000px;
+            margin: 0 auto 40px auto;
+            color: #0f172a;
+            letter-spacing: -1px;
+            line-height: 1.2;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        /* 按钮组样式 */
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            border: 1px solid #2563eb;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-secondary {
+            background-color: #fff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover {
+            border-color: #94a3b8;
+            background-color: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        /* === 新增：大图样式 === */
+        .teaser-img {
+            width: 100%;
+            max-width: 1200px; /* 限制最大宽度，防止在大屏过宽 */
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* 柔和阴影 */
+            margin-bottom: 60px;
+            display: block;
+        }
+
+        /* === 新增：摘要样式 === */
+        .abstract-container {
+            max-width: 860px;
+            margin: 0 auto;
+            text-align: justify; /* 正文两端对齐，更学术 */
+        }
+
+        .abstract-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .abstract-text {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #475569;
+        }
+
+        /* 摘要中的强调色（可选） */
+        .highlight {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        /* ================= 演示区 ================= */
+        .demo-section {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 60px 0 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 900px;
+            overflow: hidden;
+        }
+
+        .demo-header {
+            font-size: 1.5rem;      /* 增大字号 */
+            font-weight: 700;
+            color: #1e293b;         /* 深色更显眼 */
+<!--            margin-bottom: 10px;    /* 增加与卡片的间距 */-->
+            letter-spacing: -0.5px; /* 紧凑一点的字母间距 */
+        }
+
+        /* 底部说明语：限制宽度，增加上间距，优化阅读 */
+        .demo-footer-text {
+            max-width: 1050px;       /* 核心：限制最大宽度，避免单行过长 */
+            padding: 0 20px;        /* 移动端防贴边 */
+            text-align: center;     /* 居中对齐 */
+            font-size: 1.5rem;      /* 适中字号 */
+            line-height: 1.6;       /* 舒适的行高 */
+            color: #64748b;         /* 次级灰度 */
+            font-weight: 500;
+        }
+        /* 游戏容器 */
         .games-container {
             display: flex;
-            flex-direction: row; /* 核心：横向排列 */
+            flex-direction: row;
             justify-content: center;
-            align-items: center; /* 垂直居中 */
-            gap: 20px; /* 卡片间距 */
+            align-items: center;
+            gap: 30px;
 
-            width: 100%;
-            height: 100%; /* 占满屏幕高度 */
-            padding: 20px;
-            box-sizing: border-box;
-
-            /*
-               响应式核心逻辑：
-               如果屏幕放不下，容器会自动缩小，而不是折行或裁剪
-               注意：这个逻辑主要依赖下方的 @media 查询来做得更精细
-            */
-            transform-origin: center center;
+<!--            padding: 10px;-->
+            transform-origin: top center;
             transition: transform 0.3s ease;
         }
 
@@ -44,106 +199,173 @@
         .game-card {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid #e2e8f0;
             overflow: hidden;
 
-            /*
-               固定尺寸策略：
-               给它一个足够放下迷宫的宽度（例如 480px）和高度。
-               不要用百分比，否则内部 iframe 会被挤压导致穿帮。
-            */
-            flex: 0 0 550px; /* 固定宽度 480px，不许伸缩 */
-            height: 720px;   /* 足够的高度放下文字和迷宫 */
+            flex: 0 0 550px;
+            height: 750px;
 
             display: flex;
             flex-direction: column;
         }
 
-        /* 游戏标题栏 */
+        /* 卡片头部 */
         .card-header {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            color: white;
-            padding: 12px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.1em;
-            letter-spacing: 1px;
-            flex-shrink: 0; /* 防止标题栏被压缩 */
+            background: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* 嵌入游戏的iframe */
+        /* 游戏名称样式 */
+        .game-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #2563eb;
+            background: #eff6ff;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         iframe {
             border: none;
             width: 100%;
             height: 100%;
             display: block;
-            overflow: hidden;
+            background: #fff;
         }
 
-        /*
-           ====== 响应式缩放核心 ======
-           因为 3个卡片 x 480px + 间距 ≈ 1500px 宽。
-           如果屏幕小于这个宽度，我们整体缩小容器。
-        */
+        /* ================= 响应式缩放 ================= */
+        @media (max-width: 1750px) {
+            .games-container { transform: scale(0.9); }
+        }
 
-        @media (max-width: 1600px) {
-            .games-container {
-                /* 缩小到 90% */
-                transform: scale(0.9);
-                width: 111%; /* 补偿缩放导致的宽度收缩 (1 / 0.9 ≈ 1.11) */
-            }
+        @media (max-width: 1550px) {
+            .games-container { transform: scale(0.8); }
+            .demo-section { min-height: 800px; }
         }
 
         @media (max-width: 1366px) {
-            .games-container {
-                /* 笔记本屏幕：缩小到 75% */
-                transform: scale(0.75);
-                width: 133%; /* 1 / 0.75 = 1.33 */
-            }
+            .games-container { transform: scale(0.7); }
+            .demo-section { min-height: 700px; }
         }
 
         @media (max-width: 1100px) {
-            .games-container {
-                /* 平板横屏：缩小到 60% */
-                transform: scale(0.6);
-                width: 166%;
-            }
+            .games-container { transform: scale(0.6); }
+            .demo-section { min-height: 600px; }
         }
 
-        @media (max-height: 800px) {
-            /* 如果屏幕高度不够（比如笔记本），也稍微缩小一点，防止底部切掉 */
+        @media (max-width: 900px) {
             .games-container {
-                 align-items: flex-start;
-                 padding-top: 50px;
-                 transform: scale(0.7);
+                flex-direction: column;
+                transform: scale(0.8);
+                gap: 50px;
             }
+            .demo-section { height: auto; padding-bottom: 100px; }
+
+            /* 移动端对图片和摘要的适配 */
+            .hero-container { padding: 40px 5%; }
+            h1 { font-size: 2rem; }
+            .teaser-img { margin-bottom: 40px; }
         }
 
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+        }
     </style>
 </head>
 <body>
 
-    <div class="games-container">
+    <!-- 导航 -->
+    <nav>
+        <a href="#" class="logo">DiffThinker</a>
+        <div class="nav-right">
+            <a href="#">Contact</a>
+        </div>
+    </nav>
 
-        <!-- Column 1: The Maze -->
-        <div class="game-card">
-            <div class="card-header">Maze</div>
-            <iframe src="games/maze/index.html" scrolling="no"></iframe>
+    <!-- 主内容区：标题 + 按钮 + 图片 + 摘要 -->
+    <section class="hero-container">
+
+        <!-- 1. 标题 -->
+        <h1>DiffThinker: Towards Generative Multimodal Reasoning with Diffusion Models</h1>
+
+        <!-- 2. 按钮 -->
+        <div class="btn-container">
+            <a href="#" class="btn btn-primary">Paper</a>
+            <a href="https://github.com/DiffThinker-Project" class="btn btn-secondary">Code</a>
+            <a href="#" class="btn btn-secondary">Models</a>
         </div>
 
-        <!-- Column 2: Placeholder -->
-        <div class="game-card">
-            <div class="card-header">Sudoku</div>
-            <iframe src="games/sudoku/index.html" scrolling="no"></iframe>
+        <!-- 3. 核心大图 -->
+        <img src="figs/demo0.png" alt="DiffThinker Framework Demo" class="teaser-img">
+
+        <!-- 4. 摘要 -->
+        <div class="abstract-container">
+            <div class="abstract-title">Abstract</div>
+            <div class="abstract-text">
+                <p>
+                    While recent Multimodal Large Language Models (MLLMs) have attained significant strides in multimodal reasoning, their reasoning processes remain predominantly text-centric, leading to suboptimal performance in complex long-horizon, vision-centric tasks. In this paper, we establish a novel Generative Multimodal Reasoning paradigm and introduce <span class="highlight">DiffThinker</span>, a diffusion-based reasoning framework.
+                    Conceptually, DiffThinker reformulates multimodal reasoning as a native generative image-to-image task, achieving superior logical consistency and spatial precision in vision-centric tasks.
+                    We perform a systematic comparison between DiffThinker and MLLMs, providing the first in-depth investigation into the intrinsic characteristics of this paradigm, revealing four core properties: efficiency, controllability, native parallelism, and collaboration. Extensive experiments across four domains (sequential planning, combinatorial optimization, constraint satisfaction, and spatial configuration) demonstrate that DiffThinker significantly outperforms leading closed source models including GPT-5 (+314.2%) and Gemini-3-Flash (+111.6%), as well as the fine-tuned Qwen3-VL-32B baseline (+39.0%), highlighting generative multimodal reasoning as a promising approach for vision-centric reasoning.
+                </p>
+            </div>
         </div>
 
-        <!-- Column 3: Placeholder -->
-        <div class="game-card">
-            <div class="card-header">Jigsaw</div>
-            <iframe src="games/jigsaw/index.html" scrolling="no"></iframe>
+    </section>
+
+    <!-- 游戏演示 -->
+    <section class="demo-section">
+        <div class="demo-header">Try our interactive mini-games!</div>
+
+        <div class="games-container">
+
+            <!-- Card 1 -->
+            <div class="game-card">
+                <div class="card-header">
+                    <span class="game-name">Maze</span>
+                </div>
+                <iframe src="games/maze/index.html" scrolling="no"></iframe>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="game-card">
+                <div class="card-header">
+                    <span class="game-name">Sudoku</span>
+                </div>
+                <iframe src="games/sudoku/index.html" scrolling="no"></iframe>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="game-card">
+                <div class="card-header">
+                    <span class="game-name">Jigsaw</span>
+                </div>
+                <iframe src="games/jigsaw/index.html" scrolling="no"></iframe>
+            </div>
+
         </div>
 
-    </div>
+
+        <div class="demo-footer-text">
+            While humans can effortlessly solve these tasks, MLLMs remain predominantly text-centric and struggle to track the changing state of visual information over long sequences.
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2025 DiffThinker Project.
+    </footer>
 
 </body>
 </html>
