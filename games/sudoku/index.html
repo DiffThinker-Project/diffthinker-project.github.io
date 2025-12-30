@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Lato', 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 顶部留白稍微减少，为放大棋盘腾空间 */
+            justify-content: flex-start;
+            padding-top: 15px;
+            height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+            user-select: none;
+            overflow: hidden; /* 防止出现滚动条 */
+        }
+
+        /* === 顶部控制区 === */
+        .top-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        /* 难度切换条 */
+        .level-bar {
+            display: flex;
+            gap: 15px;
+            background: #e0e0e0;
+            padding: 6px 12px;
+            border-radius: 30px;
+        }
+
+        .level-btn {
+            background: none;
+            border: none;
+            font-size: 15px;
+            color: #777;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .level-btn:hover { color: #444; }
+
+        .level-btn.active {
+            background-color: #2c3e50;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 功能按钮区 (移到上方) */
+        .controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        .action-btn {
+            padding: 6px 25px;
+            border: 2px solid #555;
+            background: white;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.1s;
+        }
+
+        .action-btn:hover { background: #555; color: white; }
+        .action-btn:active { transform: scale(0.95); }
+
+        /* === 数独棋盘 (放大) === */
+        #sudoku-board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+
+            /* 【修改】尺寸放大到 520px */
+            width: 520px;
+            height: 520px;
+
+            background-color: white;
+            border: 3px solid black;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* 单个格子 */
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            /* 【修改】字体放大 */
+            font-size: 34px;
+
+            font-weight: 500;
+            color: black;
+            cursor: pointer;
+            background-color: white;
+            border-right: 1px solid black;
+            border-bottom: 1px solid black;
+            transition: background-color 0.1s;
+        }
+
+        /* 棋盘线条逻辑 (保持复刻 Python 风格) */
+        .cell:nth-child(9n) { border-right: none; }
+        .cell:nth-child(n+73) { border-bottom: none; }
+
+        /* 粗线条：宫格分隔 */
+        .cell:nth-child(3n):not(:nth-child(9n)) {
+            border-right: 3px solid black;
+        }
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 3px solid black;
+        }
+
+        /* 交互样式 */
+        .cell.selected {
+            background-color: #e3f2fd;
+        }
+
+        .cell.fixed {
+            /* 固定数字稍微粗一点，背景纯白 */
+            font-weight: 700;
+            cursor: default;
+        }
+
+        .cell.user-input {
+            color: #000; /* 保持纯黑，视觉上和题目一致，或者改为 #2980b9 区分 */
+        }
+
+        .cell.error {
+            background-color: #ffcccc !important;
+            color: #d00;
+        }
+
+        #win-message {
+            margin-top: 10px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #27ae60;
+            min-height: 30px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-panel">
+        <!-- 难度选择 -->
+        <div class="level-bar">
+            <div class="level-btn" onclick="initGame(45)">Easy</div>
+            <div class="level-btn" onclick="initGame(40)">Medium</div>
+            <div class="level-btn" onclick="initGame(35)">Hard</div>
+        </div>
+
+        <!-- 功能按钮：擦除和重置 -->
+        <div class="controls">
+            <button class="action-btn" onclick="fillNumber(0)" title="Press Backspace or 0">Erase</button>
+            <button class="action-btn" onclick="resetCurrentLevel()">Reset</button>
+        </div>
+    </div>
+
+    <!-- 棋盘 -->
+    <div id="sudoku-board"></div>
+
+    <!-- 胜利提示 -->
+    <div id="win-message"></div>
+
+<script>
+    // ==========================================
+    // 请在此处填入您生成的81位数字字符串
+    // ==========================================
+    const LEVEL_DATA = {
+        35: "018500426653080170070910530230000005064320010090000000000000680006072300001040700", // Easy
+        40: "040160325053008010702054069105002090400000050820019034200600000080091046060083902", // Medium
+        45: "000084005026000040305201069460729050157403928030008604201047000093510480074006302"  // Hard
+    };
+
+    let currentLevel = 45;
+    let initialBoard = [];
+    let currentBoard = [];
+    let selectedCellIndex = -1;
+
+    const boardEl = document.getElementById('sudoku-board');
+    const msgEl = document.getElementById('win-message');
+    const btns = document.querySelectorAll('.level-btn');
+
+    function initGame(level) {
+        currentLevel = level;
+
+        // 更新按钮高亮
+        btns.forEach(btn => {
+            btn.classList.remove('active');
+            // 获取 HTML 中 onclick="initGame(45)" 里的数字，或者直接用 data-level
+            // 这里使用最稳健的方法：判断 onclick 属性里是否包含这个数字
+            const onclickAttr = btn.getAttribute('onclick');
+            if(onclickAttr && onclickAttr.includes(`(${level})`)) {
+                btn.classList.add('active');
+            }
+        });
+
+        let puzzleStr = LEVEL_DATA[level];
+        if (!puzzleStr || puzzleStr.includes("PLACEHOLDER")) {
+            puzzleStr = "0".repeat(81);
+        }
+
+        initialBoard = puzzleStr.split('').map(Number);
+        currentBoard = [...initialBoard];
+
+        renderBoard();
+        msgEl.innerText = "";
+        selectedCellIndex = -1;
+    }
+
+    function renderBoard() {
+        boardEl.innerHTML = '';
+        for (let i = 0; i < 81; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+
+            const val = currentBoard[i];
+
+            if (initialBoard[i] !== 0) {
+                cell.innerText = val;
+                cell.classList.add('fixed');
+            } else if (val !== 0) {
+                cell.innerText = val;
+                cell.classList.add('user-input');
+            }
+
+            cell.addEventListener('click', () => selectCell(i));
+            cell.dataset.index = i;
+            boardEl.appendChild(cell);
+        }
+    }
+
+    function selectCell(index) {
+        const prev = document.querySelector('.cell.selected');
+        if (prev) prev.classList.remove('selected');
+
+        selectedCellIndex = index;
+        const cells = document.querySelectorAll('.cell');
+        cells[index].classList.add('selected');
+    }
+
+    // 填入数字逻辑
+    function fillNumber(num) {
+        if (selectedCellIndex === -1) return;
+        if (initialBoard[selectedCellIndex] !== 0) return; // 固定格子不可改
+
+        currentBoard[selectedCellIndex] = num;
+
+        const cells = document.querySelectorAll('.cell');
+        const cell = cells[selectedCellIndex];
+
+        if (num === 0) {
+            cell.innerText = "";
+            cell.classList.remove('user-input');
+        } else {
+            cell.innerText = num;
+            cell.classList.add('user-input');
+        }
+
+        checkConflicts();
+        if (checkWin()) {
+            msgEl.innerText = "Puzzle Solved!";
+        }
+    }
+
+    function resetCurrentLevel() {
+        initGame(currentLevel);
+    }
+
+    // 键盘监听
+    document.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key >= '1' && key <= '9') {
+            fillNumber(parseInt(key));
+        } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
+            fillNumber(0);
+        }
+    });
+
+    function checkConflicts() {
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(c => c.classList.remove('error'));
+
+        for (let i = 0; i < 81; i++) {
+            if (currentBoard[i] === 0) continue;
+
+            const row = Math.floor(i / 9);
+            const col = i % 9;
+            const val = currentBoard[i];
+            let conflict = false;
+
+            // 查行
+            for (let c = 0; c < 9; c++) {
+                const idx = row * 9 + c;
+                if (idx !== i && currentBoard[idx] === val) conflict = true;
+            }
+            // 查列
+            for (let r = 0; r < 9; r++) {
+                const idx = r * 9 + col;
+                if (idx !== i && currentBoard[idx] === val) conflict = true;
+            }
+            // 查3x3宫
+            const startR = Math.floor(row / 3) * 3;
+            const startC = Math.floor(col / 3) * 3;
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const idx = (startR + r) * 9 + (startC + c);
+                    if (idx !== i && currentBoard[idx] === val) conflict = true;
+                }
+            }
+
+            if (conflict) {
+                cells[i].classList.add('error');
+            }
+        }
+    }
+
+    function checkWin() {
+        if (currentBoard.includes(0)) return false;
+        const errors = document.querySelectorAll('.cell.error');
+        if (errors.length > 0) return false;
+        return true;
+    }
+
+    initGame(45);
+
+</script>
+</body>
+</html>

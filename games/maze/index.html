@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Game</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 顶部留空，适配 iframe 布局 */
+            justify-content: flex-start;
+            padding-top: 20px;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+            user-select: none; /* 防止频繁点击选中文字 */
+        }
+
+        /* 关卡进度条容器 */
+        .level-bar {
+            display: flex;
+            gap: 20px; /* 间距调整 */
+            margin-bottom: 20px;
+            background: #e0e0e0;
+            padding: 8px 20px;
+            border-radius: 30px;
+        }
+
+        /* 单个关卡标签 - 改为按钮样式 */
+        .level-item {
+            font-size: 16px;
+            color: #888; /* 未激活颜色 */
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer; /* 【修改】鼠标变成手形 */
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        /* 悬停效果 */
+        .level-item:hover {
+            color: #555;
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        /* 高亮状态 */
+        .level-item.active {
+            color: #fff; /* 文字变白 */
+            background-color: #2c3e50; /* 背景变深蓝，类似数独样式 */
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transform: scale(1.05);
+        }
+
+        canvas {
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
+            background-color: white;
+            cursor: crosshair;
+            border-radius: 4px;
+        }
+
+        .instructions {
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            max-width: 90%;
+            line-height: 1.5;
+        }
+
+        #status {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部关卡指示器 - 添加 onclick 事件 -->
+    <div class="level-bar">
+        <div class="level-item" id="lvl-0" onclick="manualSwitchLevel(0)">Easy</div>
+        <div class="level-item" id="lvl-1" onclick="manualSwitchLevel(1)">Medium</div>
+        <div class="level-item" id="lvl-2" onclick="manualSwitchLevel(2)">Hard</div>
+    </div>
+
+    <div class="instructions">
+        Click <b>Yellow</b> to start. Move to <b>Blue</b>. Click <b>Blue</b> to restart level.
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="status"></div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    // 游戏配置
+    const LEVELS = ['maze1.png', 'maze2.png', 'maze3.png'];
+    const MOVE_SPEED = 0.15;
+    const COLLISION_THRESHOLD = 50;
+
+    let playerRadius = 8;
+    let currentLevelIndex = 0;
+    let gameState = 'LOADING';
+    let images = [];
+    let mazeData = null;
+
+    let startPos = { x: 0, y: 0 };
+    let endPos = { x: 0, y: 0 };
+    let playerPos = { x: 0, y: 0 };
+    let mousePos = { x: 0, y: 0 };
+    let imagesLoaded = false;
+
+    function loadImages() {
+        let loadedCount = 0;
+        LEVELS.forEach((src, index) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                loadedCount++;
+                if (loadedCount === LEVELS.length) {
+                    imagesLoaded = true;
+                    initLevel(0);
+                }
+            };
+            images[index] = img;
+        });
+    }
+
+    // 手动切换关卡的入口函数
+    function manualSwitchLevel(index) {
+        if (!imagesLoaded) return; // 防止图片没加载完就点
+        initLevel(index);
+    }
+
+    function initLevel(index) {
+        currentLevelIndex = index;
+        const img = images[index];
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+        mazeData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        scanLevelInfo();
+
+        gameState = 'WAITING';
+        playerPos = { ...startPos };
+        mousePos = { ...startPos };
+
+        // === 更新顶部高亮状态 ===
+        updateLevelIndicator(index);
+    }
+
+    // 更新高亮样式的辅助函数
+    function updateLevelIndicator(index) {
+        // 先移除所有 active
+        for (let i = 0; i < 3; i++) {
+            document.getElementById(`lvl-${i}`).classList.remove('active');
+        }
+        // 给当前关卡添加 active
+        const current = document.getElementById(`lvl-${index}`);
+        if (current) current.classList.add('active');
+    }
+
+    function scanLevelInfo() {
+        const data = mazeData.data;
+        let startX = 0, startY = 0, startCount = 0;
+        let endX = 0, endY = 0, endCount = 0;
+
+        for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+                const i = (y * canvas.width + x) * 4;
+                const r = data[i]; const g = data[i + 1]; const b = data[i + 2];
+                // 黄色
+                if (r > 150 && g > 150 && b < 100) {
+                    startX += x; startY += y; startCount++;
+                }
+                // 蓝色
+                else if (b > 150 && r < 100 && g < 100) {
+                    endX += x; endY += y; endCount++;
+                }
+            }
+        }
+
+        if (startCount > 0) {
+            startPos = { x: startX / startCount, y: startY / startCount };
+            let rawRadius = Math.sqrt(startCount / Math.PI);
+            playerRadius = rawRadius * 1.15;
+            if (playerRadius < 3) playerRadius = 3;
+        } else {
+            startPos = { x: 50, y: 50 };
+            playerRadius = 10;
+        }
+
+        if (endCount > 0) {
+            endPos = { x: endX / endCount, y: endY / endCount };
+        } else {
+            endPos = { x: canvas.width - 50, y: canvas.height - 50 };
+        }
+    }
+
+    function isWall(x, y) {
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
+        const ix = Math.floor(x); const iy = Math.floor(y);
+        const i = (iy * canvas.width + ix) * 4;
+        const r = mazeData.data[i]; const g = mazeData.data[i+1]; const b = mazeData.data[i+2];
+        return (r < COLLISION_THRESHOLD && g < COLLISION_THRESHOLD && b < COLLISION_THRESHOLD);
+    }
+
+    function checkCircleCollision(x, y) {
+        const points = [
+            { x: x + playerRadius, y: y }, { x: x - playerRadius, y: y },
+            { x: x, y: y + playerRadius }, { x: x, y: y - playerRadius },
+            { x: x + playerRadius * 0.7, y: y + playerRadius * 0.7 },
+            { x: x - playerRadius * 0.7, y: y + playerRadius * 0.7 },
+            { x: x + playerRadius * 0.7, y: y - playerRadius * 0.7 },
+            { x: x - playerRadius * 0.7, y: y - playerRadius * 0.7 }
+        ];
+        for (let p of points) if (isWall(p.x, p.y)) return true;
+        return false;
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+    });
+
+    canvas.addEventListener('click', () => {
+        const distToStart = Math.hypot(mousePos.x - startPos.x, mousePos.y - startPos.y);
+        if (distToStart < playerRadius + 5) {
+            if (gameState === 'WAITING') {
+                gameState = 'PLAYING';
+                playerPos = { ...startPos };
+            }
+        }
+        const distToEnd = Math.hypot(mousePos.x - endPos.x, mousePos.y - endPos.y);
+        if (distToEnd < playerRadius * 2) {
+            initLevel(currentLevelIndex);
+        }
+    });
+
+    function update() {
+        if (gameState === 'PLAYING') {
+            let dx = mousePos.x - playerPos.x;
+            let dy = mousePos.y - playerPos.y;
+            dx *= MOVE_SPEED; dy *= MOVE_SPEED;
+            const maxStep = playerRadius;
+            if (Math.abs(dx) > maxStep) dx = Math.sign(dx) * maxStep;
+            if (Math.abs(dy) > maxStep) dy = Math.sign(dy) * maxStep;
+
+            if (!checkCircleCollision(playerPos.x + dx, playerPos.y)) playerPos.x += dx;
+            if (!checkCircleCollision(playerPos.x, playerPos.y + dy)) playerPos.y += dy;
+
+            const distToEnd = Math.hypot(playerPos.x - endPos.x, playerPos.y - endPos.y);
+            if (distToEnd < 10) {
+                // 通关后自动进入下一关
+                if (currentLevelIndex < LEVELS.length - 1) {
+                    initLevel(currentLevelIndex + 1);
+                } else {
+                    gameState = 'WON';
+                    updateLevelIndicator(2);
+                }
+            }
+        }
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (images[currentLevelIndex]) ctx.drawImage(images[currentLevelIndex], 0, 0);
+        if (gameState === 'PLAYING') {
+            ctx.beginPath();
+            ctx.arc(playerPos.x, playerPos.y, playerRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'red'; ctx.fill();
+            ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+        }
+    }
+
+    loadImages();
+    update();
+</script>
+</body>
+</html>

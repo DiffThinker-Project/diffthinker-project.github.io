@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Games Collection</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #eef2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* 核心：隐藏整个网页的滚动条，强制在一屏内显示 */
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 游戏容器区域 */
+        .games-container {
+            display: flex;
+            flex-direction: row; /* 核心：横向排列 */
+            justify-content: center;
+            align-items: center; /* 垂直居中 */
+            gap: 20px; /* 卡片间距 */
+
+            width: 100%;
+            height: 100%; /* 占满屏幕高度 */
+            padding: 20px;
+            box-sizing: border-box;
+
+            /*
+               响应式核心逻辑：
+               如果屏幕放不下，容器会自动缩小，而不是折行或裁剪
+               注意：这个逻辑主要依赖下方的 @media 查询来做得更精细
+            */
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+        }
+
+        /* 单个游戏卡片 */
+        .game-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+
+            /*
+               固定尺寸策略：
+               给它一个足够放下迷宫的宽度（例如 480px）和高度。
+               不要用百分比，否则内部 iframe 会被挤压导致穿帮。
+            */
+            flex: 0 0 550px; /* 固定宽度 480px，不许伸缩 */
+            height: 720px;   /* 足够的高度放下文字和迷宫 */
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 游戏标题栏 */
+        .card-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            letter-spacing: 1px;
+            flex-shrink: 0; /* 防止标题栏被压缩 */
+        }
+
+        /* 嵌入游戏的iframe */
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: hidden;
+        }
+
+        /*
+           ====== 响应式缩放核心 ======
+           因为 3个卡片 x 480px + 间距 ≈ 1500px 宽。
+           如果屏幕小于这个宽度，我们整体缩小容器。
+        */
+
+        @media (max-width: 1600px) {
+            .games-container {
+                /* 缩小到 90% */
+                transform: scale(0.9);
+                width: 111%; /* 补偿缩放导致的宽度收缩 (1 / 0.9 ≈ 1.11) */
+            }
+        }
+
+        @media (max-width: 1366px) {
+            .games-container {
+                /* 笔记本屏幕：缩小到 75% */
+                transform: scale(0.75);
+                width: 133%; /* 1 / 0.75 = 1.33 */
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .games-container {
+                /* 平板横屏：缩小到 60% */
+                transform: scale(0.6);
+                width: 166%;
+            }
+        }
+
+        @media (max-height: 800px) {
+            /* 如果屏幕高度不够（比如笔记本），也稍微缩小一点，防止底部切掉 */
+            .games-container {
+                 align-items: flex-start;
+                 padding-top: 50px;
+                 transform: scale(0.7);
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="games-container">
+
+        <!-- Column 1: The Maze -->
+        <div class="game-card">
+            <div class="card-header">Maze</div>
+            <iframe src="games/maze/index.html" scrolling="no"></iframe>
+        </div>
+
+        <!-- Column 2: Placeholder -->
+        <div class="game-card">
+            <div class="card-header">Sudoku</div>
+            <iframe src="games/sudoku/index.html" scrolling="no"></iframe>
+        </div>
+
+        <!-- Column 3: Placeholder -->
+        <div class="game-card">
+            <div class="card-header">Jigsaw</div>
+            <iframe src="games/jigsaw/index.html" scrolling="no"></iframe>
+        </div>
+
+    </div>
+
+</body>
+</html>
