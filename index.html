@@ -92,15 +92,18 @@
         }
 
         .btn-primary {
-            background-color: #2563eb;
-            color: white;
-            border: 1px solid #2563eb;
-            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            background-color: #fff;       /* 背景改为白色 */
+            color: #2563eb;               /* 字体改为 Logo 同款蓝 */
+            border: 1px solid #2563eb;    /* 边框也用 Logo 同款蓝 */
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.1);
         }
+
         .btn-primary:hover {
-            background-color: #1d4ed8;
+            background-color: #eff6ff;    /* 悬停时变极浅的蓝色背景，而不是深蓝 */
+            color: #1d4ed8;               /* 悬停时文字稍微加深 */
+            border-color: #1d4ed8;
             transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
 
         .btn-secondary {
@@ -182,6 +185,32 @@
             color: #64748b;         /* 次级灰度 */
             font-weight: 500;
         }
+        /* ================= 新增：结果展示区样式 ================= */
+        .results-section {
+            background: #ffffff; /* 白色背景，与上方的灰色区分 */
+            padding: 100px 5%;   /* 上下留出充足的距离 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 50px; /* 标题和图片之间的距离 */
+            letter-spacing: -1px;
+        }
+
+        .success-img {
+            width: 100%;
+            max-width: 1200px; /* 保持与上方大图一致的宽度限制 */
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); /* 统一的阴影风格 */
+            border: 1px solid #f1f5f9;
+        }
+
         /* 游戏容器 */
         .games-container {
             display: flex;
@@ -303,11 +332,15 @@
 
         <!-- 2. 按钮 -->
         <div class="btn-container">
-            <a href="#" class="btn btn-primary">Paper</a>
-            <a href="https://github.com/DiffThinker-Project" class="btn btn-secondary">Code</a>
-            <a href="#" class="btn btn-secondary">Models</a>
-        </div>
+            <!-- Paper -->
+            <a href="https://arxiv.org/abs/24XX.XXXXX" class="btn btn-primary" target="_blank">Paper</a>
 
+            <!-- Code -->
+            <a href="https://github.com/lcqysl/DiffThinker" class="btn btn-primary" target="_blank">Code</a>
+
+            <!-- Models -->
+            <a href="https://huggingface.co/yhx12/DiffThinker" class="btn btn-primary" target="_blank">Models</a>
+        </div>
         <!-- 3. 核心大图 -->
         <img src="figs/demo0.png" alt="DiffThinker Framework Demo" class="teaser-img">
 
@@ -362,7 +395,10 @@
             While humans can effortlessly solve these tasks, MLLMs remain predominantly text-centric and struggle to track the changing state of visual information over long sequences.
         </div>
     </section>
-
+    <section class="results-section">
+        <h2 class="section-title">Success Cases</h2>
+        <img src="figs/success.png" alt="Success Cases" class="success-img">
+    </section>
     <footer>
         &copy; 2025 DiffThinker Project.
     </footer>
